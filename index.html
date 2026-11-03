@@ -207,6 +207,7 @@ const ageContext={
  he:['ג׳יג׳י לומדת משהו חדש. עזרו לה למצוא את התשובה!','מיס הוטי נתנה משימה חדשה. ג׳יג׳י צריכה עזרה!','ג׳יג׳י עומדת לטעות! עזרו לה לבחור נכון.']
 };
 const v8Counts={'5-7':36,'8-9':36,'10-11':40};
+const ageGameNames={'5-7':'🔊 Listen & tap pictures','8-9':'🔤 Build English words','10-11':'📖 Complete the story'};
 let v8={id:-1,phase:'menu',i:0,selected:null,correct:false,errors:0,completed:0};
 let v8Done={};try{v8Done=JSON.parse(localStorage.getItem('gigi_v8_age_done')||'{}')}catch(e){}
 function v8Text(tr,en,he){return ({tr,en,he})[state.lang]||en}
@@ -221,18 +222,41 @@ function v8Start(id){let resume={};try{resume=JSON.parse(localStorage.getItem('g
 function v8Advance(){let a=adventures[v8.id];if(v8.i>=a.words.length-1){v8.phase='play';v8.i=0}else v8.i++;playEffect('tap');gigiSaveGame();render();setTimeout(()=>gigiReadCurrent(),120)}
 function v8Pick(idx){if(v8.selected!==null)return;v8.selected=idx;v8.correct=idx===v8Target(adventures[v8.id]);if(!v8.correct)v8.errors++;playEffect(v8.correct?'correct':'wrong');render();gigiSpeak(v8.correct?'Wonderful! Great job!':'Oopsie! Try again!',v8.correct?1.08:0.94)}
 function v8Next(){if(!v8.correct){v8.selected=null;render();return}v8.i++;v8.completed++;v8.selected=null;if(v8.i>=v8Counts[v8Age()]){v8.phase='done';v8Done[v8Age()+'-'+v8.id]=true;localStorage.setItem('gigi_v8_age_done',JSON.stringify(v8Done));playEffect('complete')}else playEffect('tap');gigiSaveGame();render();setTimeout(()=>gigiReadCurrent(),120)}
-function v8Game(){if(v8.id<0){let age=v8Age(),count=adventures.filter((a,i)=>v8Done[age+'-'+i]).length;shell(`<div class="card"><h1 class="heading">${ku('adventureHeading')} </h1><div class="notice">🎯 ${age} · ${agePaths[age][state.lang]}</div><p class="sub">${ageDirections[age][state.lang]} · ${v8Counts[age]} ${taskCountLabel()}</p><p class="sub">⭐ ${count}/8 · ${gl('score')}</p>${adventures.map((a,i)=>`<button class="lesson" data-v8start="${i}"><strong>${v8Done[age+'-'+i]?'✅':'🎮'} ${a.title}</strong><div class="sub">${v8Mode(i)==='story'?'📖':v8Mode(i)==='spell'?'🔤':v8Mode(i)==='memory'?'🧠':'🎯'} ${agePaths[age][state.lang]}</div></button>`).join('')}</div>`);document.querySelectorAll('[data-v8start]').forEach(b=>b.onclick=()=>v8Start(+b.dataset.v8start));return}
+function v8Game(){if(v8.id<0){let age=v8Age(),count=adventures.filter((a,i)=>v8Done[age+'-'+i]).length;shell(`<div class="card"><h1 class="heading">${ku('adventureHeading')} </h1><div class="notice">🎯 ${age} · ${agePaths[age][state.lang]}</div><p class="sub">${ageDirections[age][state.lang]} · ${v8Counts[age]} ${taskCountLabel()}</p><p class="sub">⭐ ${count}/8 · ${gl('score')}</p>${adventures.map((a,i)=>`<button class="lesson" data-v8start="${i}"><strong>${v8Done[age+'-'+i]?'✅':'🎮'} ${a.title}</strong><div class="sub">${v8Mode(i)==='story'?'📖':v8Mode(i)==='spell'?'🔤':v8Mode(i)==='memory'?'🧠':'🎯'} ${ageGameNames[age]}</div></button>`).join('')}</div>`);document.querySelectorAll('[data-v8start]').forEach(b=>b.onclick=()=>v8Start(+b.dataset.v8start));return}
 let a=adventures[v8.id],age=v8Age(),w=a.words[v8Target(a)],mode=v8Mode(v8.id),count=v8Counts[age];let html=`<div class="card"><button class="ghost" id="v8back">${gl('back')}</button><h2 class="heading">${a.title}</h2><p class="sub">${agePaths[age][state.lang]}</p>`;
 if(v8.phase==='learn'){let lw=a.words[v8.i];html+=`<div class="card" style="text-align:center"><div style="font-size:65px">${lw[1]}</div>${age==='5-7'?'':`<h2 dir="ltr">${esc(lw[0])}</h2><p>${esc(translatedWord(lw[2]))}</p>`}<p>🦉 Miss Hootie: ${age==='5-7'?'🔊':`“${esc(lw[0])}!”`}</p><p>🐒 Gigi: “${['Wow! I learned something new!','Wait... what? Oh, I see!','Let me try!'][v8.i%3]}”</p></div><p class="sub">${v8.i+1}/${Math.min(a.words.length,a.words.length)}</p><button class="speaker" id="gigiReplay">🔊 ${v8Text('Dinle','Listen','האזנה')}</button><button class="primary" id="v8advance">${gl('next')} →</button>`}
 else if(v8.phase==='done'){html+=`<div class="card" style="text-align:center"><div style="font-size:56px">🏆🌟</div><h2>${gl('done')}</h2><p>${v8.completed} ${taskCountLabel()} · ${age}</p><p>🐒 Gigi: “We did it together!”</p></div><button class="primary" id="v8replay">${gl('again')}</button>`}
 else {let opts=v8OptionIndices(a),showPicture=age!=='5-7',imageOnly=age==='5-7',intro=v8Prompt(a,mode,w);html+=`<p class="sub">${taskCountLabel()} ${v8.i+1}/${count}</p><div style="height:8px;background:#e8ddf5;border-radius:12px;overflow:hidden"><div style="height:100%;background:#8054c4;width:${Math.round(100*v8.i/count)}%"></div></div><div class="notice"><strong>🦉 Miss Hootie:</strong> ${age==='5-7'?'🔊':esc(intro)}</div><button class="speaker" id="gigiReplay">🔊 ${v8Text('Tekrar dinle','Listen again','האזנה חוזרת')}</button>`;
 if(age==='10-11')html+=`<p class="sub">📖 ${ageContext[state.lang][v8.i%3]}</p>`;
 if(showPicture)html+=`<div class="card" style="text-align:center;font-size:62px;padding:16px">${w[1]}</div>`;
+if(age==='8-9'){
+ const letters=[...w[0].toUpperCase().replace(/[^A-Z]/g,'')];
+ const shuffled=letters.map((ch,i)=>({ch,i})).sort((x,y)=>((x.i*7+v8.i*11)%17)-((y.i*7+v8.i*11)%17));
+ html+=`<div class="notice">🔤 ${v8Text('Resimdeki kelimeyi oluştur','Build the word for the picture','בנו את המילה בתמונה')}</div><div id="gigiSpelled" style="text-align:center;font-size:27px;letter-spacing:6px;min-height:45px;margin:14px">${'_ '.repeat(letters.length)}</div><div class="choices">${shuffled.map(x=>`<button class="choice" style="font-size:25px;min-height:64px" data-letter="${x.ch}">${x.ch}</button>`).join('')}</div><button class="ghost" id="gigiClear">↺</button><div id="gigiWordFeedback" class="notice" style="display:none"></div>`;
+ }else if(age==='10-11'){
+ const contexts=[`Gigi looks around and says: “I can see a ____!”`,`Miss Hootie asks: “Which word completes our story? We found a ____.”`,`The friends explore together. Gigi whispers: “Look! There is a ____ over there.”`];
+ html+=`<div class="notice" dir="ltr">📖 ${contexts[v8.i%3]}</div><div class="choices">${opts.map(i=>`<button class="choice" data-v8pick="${i}">${a.words[i][0]}</button>`).join('')}</div>`;
+ }else{
 
-html+=`<div class="choices game-choices">${opts.map(i=>{let x=a.words[i],sel=v8.selected===i;return `<button class="choice ${imageOnly?'visual-choice':''} ${sel?(v8.correct?'correct':'wrong'):''}" data-v8pick="${i}" ${v8.selected!==null?'disabled':''} aria-label="${imageOnly?'Picture '+(opts.indexOf(i)+1):esc(x[0])}" style="${imageOnly?'font-size:44px;min-height:100px':'font-size:16px;min-height:90px'}">${imageOnly?x[1]:`<span dir="ltr">${esc(x[0])}</span>`}</button>`}).join('')}</div>`;
-if(v8.selected!==null)html+=`<div class="notice"><strong>${v8.correct?'✅ '+ku('correct'):'💜 '+ku('wrong')}</strong><p>${v8.correct?`🦉 ${esc(w[0])} = ${esc(translatedWord(w[2]))}`:age==='5-7'?v8Text('Bir daha dene!','Try again!','נסו שוב!'):v8Text('İpucu: Görseli dikkatle incele.','Hint: Look carefully at the picture.','רמז: הסתכלו היטב בתמונה.')}</p><p>🐒 Gigi: “${v8.correct?['Yes! We did it!','I knew we could!','Woohoo!'][v8.i%3]:'Oopsie! Let’s try again!'}”</p><button class="primary" id="v8next">${v8.correct?gl('next'):gl('again')} →</button></div>`;
+if(age==='5-7')html+=`<div class="choices game-choices">${opts.map(i=>{let x=a.words[i],sel=v8.selected===i;return `<button class="choice ${imageOnly?'visual-choice':''} ${sel?(v8.correct?'correct':'wrong'):''}" data-v8pick="${i}" ${v8.selected!==null?'disabled':''} aria-label="${imageOnly?'Picture '+(opts.indexOf(i)+1):esc(x[0])}" style="${imageOnly?'font-size:44px;min-height:100px':'font-size:16px;min-height:90px'}">${imageOnly?x[1]:`<span dir="ltr">${esc(x[0])}</span>`}</button>`}).join('')}</div>`;
+}if(v8.selected!==null)html+=`<div class="notice"><strong>${v8.correct?'✅ '+ku('correct'):'💜 '+ku('wrong')}</strong><p>${v8.correct?`🦉 ${esc(w[0])} = ${esc(translatedWord(w[2]))}`:age==='5-7'?v8Text('Bir daha dene!','Try again!','נסו שוב!'):v8Text('İpucu: Görseli dikkatle incele.','Hint: Look carefully at the picture.','רמז: הסתכלו היטב בתמונה.')}</p><p>🐒 Gigi: “${v8.correct?['Yes! We did it!','I knew we could!','Woohoo!'][v8.i%3]:'Oopsie! Let’s try again!'}”</p><button class="primary" id="v8next">${v8.correct?gl('next'):gl('again')} →</button></div>`;
 }
-shell(html+'</div>');el('v8back').onclick=()=>{v8.id=-1;render()};if(el('v8advance'))el('v8advance').onclick=v8Advance;if(el('v8next'))el('v8next').onclick=v8Next;if(el('v8replay'))el('v8replay').onclick=()=>v8Start(v8.id);if(el('gigiReplay'))el('gigiReplay').onclick=gigiReadCurrent;document.querySelectorAll('[data-v8pick]').forEach(b=>b.onclick=()=>v8Pick(+b.dataset.v8pick));}
+shell(html+'</div>');el('v8back').onclick=()=>{v8.id=-1;render()};if(el('v8advance'))el('v8advance').onclick=v8Advance;if(el('v8next'))el('v8next').onclick=v8Next;if(el('v8replay'))el('v8replay').onclick=()=>v8Start(v8.id);if(el('gigiReplay'))el('gigiReplay').onclick=gigiReadCurrent;document.querySelectorAll('[data-v8pick]').forEach(b=>b.onclick=()=>v8Pick(+b.dataset.v8pick));
+if(age==='8-9'&&v8.phase==='play'){
+ let typed='';const target=w[0].toUpperCase().replace(/[^A-Z]/g,'');
+ document.querySelectorAll('[data-letter]').forEach(b=>b.onclick=()=>{
+  if(v8.selected!==null)return;
+  typed+=b.dataset.letter;b.disabled=true;
+  el('gigiSpelled').textContent=typed+' _'.repeat(Math.max(0,target.length-typed.length));
+  if(typed.length===target.length){v8.selected=v8Target(a);v8.correct=typed===target; if(!v8.correct)v8.errors++;
+   const f=el('gigiWordFeedback');f.style.display='block';f.textContent=v8.correct?'🌟 Great spelling!':'💜 Oopsie! Try again!';
+   gigiSpeak(v8.correct?'Great spelling!':'Oopsie! Try again!');
+   const next=document.createElement('button');next.className='primary';next.textContent=v8.correct?'Next →':'Try again ↺';next.onclick=()=>{if(v8.correct)v8Next();else{v8.selected=null;render()}};f.appendChild(next);
+  }
+ });
+ if(el('gigiClear'))el('gigiClear').onclick=()=>{v8.selected=null;render()};
+}
+}
 kidsGames=v8Game;
 
 function render(){document.body.classList.toggle('kids-game',state.view==='kidsGames'&&g.id>=0);if(state.view==='kidsGames')kidsGames();else if(state.view==='home')home();else if(state.view==='quiz')quiz();else if(state.view==='assessmentResult')assessmentResult();else if(state.view==='lessons')lessons();else if(state.view==='lessonIntro')lessonIntro();else if(state.view==='lessonResult')lessonResult();else if(state.view==='progress')progress();else if(state.view==='settings')settings();bindKidAge()}
@@ -246,7 +270,7 @@ window.GigiTest={getState:()=>state,ageQuestions,assessmentLevel,questionObj,ban
 .gigi-book-controls button:disabled{opacity:.35}
 </style>
 <script>
-let gigiBookIndex=0,gigiBookPage=0;
+let gigiBookIndex=0,gigiBookPage=0,gigiBookPlaying=false,gigiBookRun=0;
 const gigiBooks=[
  {name:"Gigi's First Safari",pages:[
  ["🌞🌴🐒","One sunny morning, Gigi went on a safari. The sky was blue and the sun was warm."],
@@ -300,21 +324,55 @@ function gigiReadCurrent(){
  gigiSpeak(line,.78);
 }
 function gigiSaveGame(){try{localStorage.setItem('gigi_v10_game_'+v8Age()+'_'+v8.id,JSON.stringify({phase:v8.phase,i:v8.i,completed:v8.completed}))}catch(e){}}
+
+const gigiBookTimes=[[0.0, 8.568, 15.101, 21.737, 27.756, 34.048, 38.57, 44.07, 50.715, 57.656, 63.625, 68.679], [0.0, 5.896, 10.27, 14.061, 18.04, 22.411, 26.952, 31.215, 35.67, 39.843, 44.006, 49.357], [0.0, 4.36, 8.372, 12.587, 16.439, 20.995, 26.239, 31.465, 37.119, 41.581, 46.023, 49.571]];
+let gigiAudio=null;
+function gigiBookStop(){
+ gigiBookRun++;gigiBookPlaying=false;
+ if(gigiAudio){gigiAudio.pause();gigiAudio.removeAttribute('src');gigiAudio.load();gigiAudio=null}
+ try{speechSynthesis.cancel()}catch(e){}
+}
 function gigiBookList(){
- state.view='storybook';
- shell(`<div class="card"><h1 class="heading">📚 Gigi's Storybook World</h1><p class="sub">🎙️ One narrator · English stories</p>${gigiBooks.map((b,i)=>`<button class="lesson" data-book="${i}">📖 ${b.name}</button>`).join('')}</div>`);
- document.querySelectorAll('[data-book]').forEach(b=>b.onclick=()=>{gigiBookIndex=+b.dataset.book;try{gigiBookPage=+(localStorage.getItem('gigi_book_'+gigiBookIndex)||0)}catch(e){}gigiBookDraw()});
+ gigiBookStop();state.view='storybook';
+ shell(`<div class="card"><h1 class="heading">📚 Gigi's Storybook World</h1><p class="sub">🎙️ One narrator · automatic page turning</p>${gigiBooks.map((b,i)=>`<button class="lesson" data-book="${i}">📖 ${b.name}</button>`).join('')}</div>`);
+ document.querySelectorAll('[data-book]').forEach(b=>b.onclick=()=>{
+ gigiBookIndex=+b.dataset.book;gigiBookPage=0;gigiBookDraw();
+ });
 }
 function gigiBookDraw(){
  const b=gigiBooks[gigiBookIndex],p=b.pages[gigiBookPage],young=v8Age()==='5-7';
  state.view='storybook';
- shell(`<div class="card"><button class="ghost" id="bookBack">← 📚</button><h2>${b.name}</h2><p class="sub">${gigiBookPage+1}/${b.pages.length}</p><div class="gigi-book-art" aria-label="Picture book illustration">${p[0]}</div>${young?'':`<p class="quote" dir="ltr">${p[1]}</p>`}<div class="gigi-book-controls"><button id="bookPrev" ${gigiBookPage===0?'disabled':''}>◀</button><button id="bookSpeak">🔊</button><button id="bookNext" ${gigiBookPage===b.pages.length-1?'disabled':''}>▶</button></div><p class="sub" style="text-align:center">🎧 ${young?'Listen to the story':'Listen and read'}</p></div>`);
- el('bookBack').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}gigiBookList()};
- el('bookPrev').onclick=()=>{gigiBookPage--;gigiBookMove()};
- el('bookNext').onclick=()=>{gigiBookPage++;gigiBookMove()};
- el('bookSpeak').onclick=()=>gigiSpeak(p[1],.78);
+ shell(`<div class="card"><button class="ghost" id="bookBack">← 📚</button><h2>${b.name}</h2><p class="sub">${gigiBookPage+1}/${b.pages.length}</p><div class="gigi-book-art" aria-label="Story picture">${p[0]}</div>${young?'':`<p class="quote" dir="ltr">${p[1]}</p>`}<div class="gigi-book-controls"><button id="bookPrev" ${gigiBookPage===0?'disabled':''}>◀</button><button id="bookSpeak">${gigiBookPlaying?'⏸️':'▶️'}</button><button id="bookNext" ${gigiBookPage===b.pages.length-1?'disabled':''}>▶</button></div><p class="sub" style="text-align:center">${gigiBookPlaying?'🔊 Story playing':'▶️ Tap once to listen to the whole book'}</p></div>`);
+ el('bookBack').onclick=()=>gigiBookList();
+ el('bookPrev').onclick=()=>gigiBookSeek(Math.max(0,gigiBookPage-1));
+ el('bookNext').onclick=()=>gigiBookSeek(Math.min(b.pages.length-1,gigiBookPage+1));
+ el('bookSpeak').onclick=()=>{
+  if(!gigiAudio){gigiBookPlay()}
+  else if(gigiAudio.paused){gigiAudio.play().then(()=>{gigiBookPlaying=true;gigiBookDraw()}).catch(()=>{gigiBookPlaying=false;gigiBookDraw()})}
+  else{gigiAudio.pause();gigiBookPlaying=false;gigiBookDraw()}
+ };
 }
-function gigiBookMove(){try{speechSynthesis.cancel();localStorage.setItem('gigi_book_'+gigiBookIndex,String(gigiBookPage))}catch(e){}gigiBookDraw();gigiSpeak(gigiBooks[gigiBookIndex].pages[gigiBookPage][1],.78)}
+function gigiBookSeek(i){
+ gigiBookPage=i;
+ if(gigiAudio)gigiAudio.currentTime=gigiBookTimes[gigiBookIndex][i];
+ gigiBookDraw();
+}
+function gigiBookPlay(){
+ gigiBookStop();
+ const audio=new Audio('story_'+gigiBookIndex+'.wav');
+ gigiAudio=audio;
+ audio.preload='auto';
+ audio.ontimeupdate=()=>{
+  if(gigiAudio!==audio)return;
+  const times=gigiBookTimes[gigiBookIndex];
+  let next=0;
+  while(next+1<times.length&&audio.currentTime>=times[next+1])next++;
+  if(next!==gigiBookPage){gigiBookPage=next;gigiBookDraw()}
+ };
+ audio.onended=()=>{if(gigiAudio!==audio)return;gigiBookPlaying=false;gigiBookPage=gigiBooks[gigiBookIndex].pages.length-1;gigiBookDraw()};
+ audio.onerror=()=>{if(gigiAudio!==audio)return;gigiBookPlaying=false;gigiBookDraw();alert('Audio could not load. Please check the story WAV files.')};
+ audio.play().then(()=>{gigiBookPlaying=true;gigiBookDraw()}).catch(()=>{gigiBookPlaying=false;gigiBookDraw();alert('Tap play again to enable audio.')});
+}
 const oldGigiRender=render;
 render=function(){
  if(state.view==='storybook'){gigiBookList();return}
